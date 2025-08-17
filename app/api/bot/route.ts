@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Telegraf, Markup } from "telegraf";
 
-// Массив для хранения записей пользователей
-const bookings: { userId: number; wash: string; time: string }[] = [];
+// ✅ Экспортируем массив бронирований, чтобы админка могла его использовать
+export const bookings: { userId: number; wash: string; time: string; status?: string }[] = [];
 
 // Временное хранилище выбранной мойки для каждого пользователя
-const userSelectedWash: Record<number, string> = {};
+export const userSelectedWash: Record<number, string> = {};
 
 // Создаём бота с токеном из переменных окружения
 const bot = new Telegraf(process.env.BOT_TOKEN!);
@@ -48,8 +48,8 @@ bot.action(/time_\d+/, (ctx) => {
         return;
     }
 
-    // Сохраняем запись
-    bookings.push({ userId, wash, time });
+    // Сохраняем запись с полем status
+    bookings.push({ userId, wash, time, status: "new" });
 
     ctx.reply(`Вы выбрали ${wash} на время ${time}. Ваша запись подтверждена ✅`);
 });
