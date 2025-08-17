@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import LoginForm from "./LoginForm";
 
 interface Booking {
     userId: number;
@@ -10,8 +11,10 @@ interface Booking {
 }
 
 export default function AdminPage() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
+    const [visible, setVisible] = useState(false); // для плавного появления таблицы
 
     const fetchBookings = async () => {
         try {
@@ -19,23 +22,20 @@ export default function AdminPage() {
             const data = await res.json();
             setBookings(data.bookings || []);
         } catch (err) {
-            console.error("Ошибка при загрузке записей:", err);
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        // Первый запрос при загрузке страницы
-        fetchBookings();
-
-        // Polling каждые 5 секунд
-        const interval = setInterval(() => {
+        if (isLoggedIn) {
             fetchBookings();
-        }, 5000);
-
-        return () => clearInterval(interval); // очистка при уходе со страницы
-    }, []);
+            setVisible(true); // показываем таблицу плавно
+            const interval = setInterval(fetchBookings, 5000);
+            return () => clearInterval(interval);
+        }
+    }, [isLoggedIn]);
 
     const updateStatus = async (userId: number, time: string, action: string) => {
         await fetch("/api/bookings", {
@@ -43,11 +43,19 @@ export default function AdminPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId, time, action }),
         });
-        fetchBookings(); // сразу обновляем после изменения
+        fetchBookings();
     };
 
+    if (!isLoggedIn) {
+        return <LoginForm onLoginSuccess={() => setIsLoggedIn(true)} />;
+    }
+
     return (
-        <div className="min-h-screen bg-gray-100 p-6">
+        <div
+            className={`min-h-screen bg-gray-100 p-6 transition-opacity duration-500 ${
+                visible ? "opacity-100" : "opacity-0"
+            }`}
+        >
             <h1 className="text-3xl font-bold mb-6 text-center">Админ-панель АвтоСлот</h1>
 
             {loading ? (
@@ -56,7 +64,7 @@ export default function AdminPage() {
                 <p className="text-center text-gray-500">Записей пока нет.</p>
             ) : (
                 <div className="overflow-x-auto">
-                    <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                    <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden transition-transform duration-300 transform">
                         <thead className="bg-blue-500 text-white">
                         <tr>
                             <th className="py-3 px-6 text-left">User ID</th>
