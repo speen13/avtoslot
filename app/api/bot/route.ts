@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Telegraf, Markup } from "telegraf";
 
+// Массив для хранения записей пользователей
+const bookings: { userId: number; wash: string; time: string }[] = [];
+
+// Временное хранилище выбранной мойки для каждого пользователя
+const userSelectedWash: Record<number, string> = {};
+
 // Создаём бота с токеном из переменных окружения
 const bot = new Telegraf(process.env.BOT_TOKEN!);
 
@@ -19,6 +25,8 @@ bot.start((ctx) => {
 // Обработчик нажатий на кнопки выбора мойки
 bot.action(/wash_\d/, (ctx) => {
     const washId = ctx.match[0]; // wash_1, wash_2 и т.д.
+    userSelectedWash[ctx.from.id] = washId;
+
     ctx.reply(
         `Вы выбрали ${washId}. Теперь выберите время:`,
         Markup.inlineKeyboard([
@@ -32,7 +40,18 @@ bot.action(/wash_\d/, (ctx) => {
 // Обработчик нажатий на кнопки выбора времени
 bot.action(/time_\d+/, (ctx) => {
     const time = ctx.match[0]; // time_10, time_11 и т.д.
-    ctx.reply(`Вы выбрали время: ${time}. Ваша запись подтверждена ✅`);
+    const userId = ctx.from.id;
+    const wash = userSelectedWash[userId];
+
+    if (!wash) {
+        ctx.reply("Сначала выберите мойку!");
+        return;
+    }
+
+    // Сохраняем запись
+    bookings.push({ userId, wash, time });
+
+    ctx.reply(`Вы выбрали ${wash} на время ${time}. Ваша запись подтверждена ✅`);
 });
 
 // POST — Telegram присылает апдейты сюда
@@ -47,7 +66,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// GET — проверка работы API
+// GET — проверка работы API и просмотр всех записей
 export async function GET() {
-    return NextResponse.json({ status: "bot is running" });
+    return NextResponse.json({ status: "bot is running", bookings });
 }
