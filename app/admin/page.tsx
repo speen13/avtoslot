@@ -14,12 +14,28 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(true);
 
     const fetchBookings = async () => {
-        setLoading(true);
-        const res = await fetch("/api/bookings");
-        const data = await res.json();
-        setBookings(data.bookings || []);
-        setLoading(false);
+        try {
+            const res = await fetch("/api/bookings");
+            const data = await res.json();
+            setBookings(data.bookings || []);
+        } catch (err) {
+            console.error("Ошибка при загрузке записей:", err);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    useEffect(() => {
+        // Первый запрос при загрузке страницы
+        fetchBookings();
+
+        // Polling каждые 5 секунд
+        const interval = setInterval(() => {
+            fetchBookings();
+        }, 5000);
+
+        return () => clearInterval(interval); // очистка при уходе со страницы
+    }, []);
 
     const updateStatus = async (userId: number, time: string, action: string) => {
         await fetch("/api/bookings", {
@@ -27,12 +43,8 @@ export default function AdminPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId, time, action }),
         });
-        fetchBookings();
+        fetchBookings(); // сразу обновляем после изменения
     };
-
-    useEffect(() => {
-        fetchBookings();
-    }, []);
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
