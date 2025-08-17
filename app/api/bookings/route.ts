@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 // Импортируем массив bookings из бота
 // Если код бота и API в одном проекте, можно экспортировать bookings
-import { bookings } from "../bot/route"; // путь поправь, если нужно
+import {bookings} from "@/app/data/bookings";
 
 export async function GET() {
     return NextResponse.json({ bookings });

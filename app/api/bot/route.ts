@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Telegraf, Markup } from "telegraf";
+import {bookings, userSelectedWash} from "@/app/data/bookings";
 
-// ✅ Экспортируем массив бронирований, чтобы админка могла его использовать
-export const bookings: { userId: number; wash: string; time: string; status?: string }[] = [];
-
-// Временное хранилище выбранной мойки для каждого пользователя
-export const userSelectedWash: Record<number, string> = {};
 
 // Создаём бота с токеном из переменных окружения
 const bot = new Telegraf(process.env.BOT_TOKEN!);
