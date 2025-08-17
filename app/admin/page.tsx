@@ -11,16 +11,15 @@ interface Booking {
 
 export default function AdminPage() {
     const [bookings, setBookings] = useState<Booking[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const fetchBookings = async () => {
+        setLoading(true);
         const res = await fetch("/api/bookings");
         const data = await res.json();
-        setBookings(data.bookings);
+        setBookings(data.bookings || []);
+        setLoading(false);
     };
-
-    useEffect(() => {
-        fetchBookings();
-    }, []);
 
     const updateStatus = async (userId: number, time: string, action: string) => {
         await fetch("/api/bookings", {
@@ -31,34 +30,57 @@ export default function AdminPage() {
         fetchBookings();
     };
 
+    useEffect(() => {
+        fetchBookings();
+    }, []);
+
     return (
-        <div style={{ padding: "20px" }}>
-            <h1>Админ-панель АвтоСлот</h1>
-            <table border={1} cellPadding={10} style={{ borderCollapse: "collapse", width: "100%" }}>
-                <thead>
-                <tr>
-                    <th>User ID</th>
-                    <th>Мойка</th>
-                    <th>Время</th>
-                    <th>Статус</th>
-                    <th>Действие</th>
-                </tr>
-                </thead>
-                <tbody>
-                {bookings.map((b, i) => (
-                    <tr key={i}>
-                        <td>{b.userId}</td>
-                        <td>{b.wash}</td>
-                        <td>{b.time}</td>
-                        <td>{b.status || "Новая"}</td>
-                        <td>
-                            <button onClick={() => updateStatus(b.userId, b.time, "confirmed")}>Подтвердить</button>
-                            <button onClick={() => updateStatus(b.userId, b.time, "canceled")}>Отменить</button>
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+        <div className="min-h-screen bg-gray-100 p-6">
+            <h1 className="text-3xl font-bold mb-6 text-center">Админ-панель АвтоСлот</h1>
+
+            {loading ? (
+                <p className="text-center">Загрузка...</p>
+            ) : bookings.length === 0 ? (
+                <p className="text-center text-gray-500">Записей пока нет.</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+                        <thead className="bg-blue-500 text-white">
+                        <tr>
+                            <th className="py-3 px-6 text-left">User ID</th>
+                            <th className="py-3 px-6 text-left">Мойка</th>
+                            <th className="py-3 px-6 text-left">Время</th>
+                            <th className="py-3 px-6 text-left">Статус</th>
+                            <th className="py-3 px-6 text-left">Действие</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {bookings.map((b, i) => (
+                            <tr key={i} className="border-b hover:bg-gray-100">
+                                <td className="py-3 px-6">{b.userId}</td>
+                                <td className="py-3 px-6">{b.wash}</td>
+                                <td className="py-3 px-6">{b.time}</td>
+                                <td className="py-3 px-6 capitalize">{b.status || "new"}</td>
+                                <td className="py-3 px-6 space-x-2">
+                                    <button
+                                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                                        onClick={() => updateStatus(b.userId, b.time, "confirmed")}
+                                    >
+                                        Подтвердить
+                                    </button>
+                                    <button
+                                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                                        onClick={() => updateStatus(b.userId, b.time, "canceled")}
+                                    >
+                                        Отменить
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }
